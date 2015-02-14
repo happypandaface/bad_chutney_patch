@@ -971,6 +971,19 @@ def exit_on_error(err_msg):
     print (usage(_THE_NETWORK))
     sys.exit(1)
 
+def runAction(verb):
+    if verb == "kill-all":
+        print("Killing all tests...")
+        for node_dir in os.listdir("net"):
+            for node in os.listdir("net/%s" % node_dir):
+                pid_path = "net/%s/%s/pid" % (node_dir, node)
+                print(pid_path)
+                if os.path.exists(pid_path):
+                    print("killing... %s" % node)
+    else:
+        print("Error: I don't know how to %s." % verb)
+
+
 def runConfigFile(verb, data):
     _GLOBALS = dict(_BASE_ENVIRON=_BASE_ENVIRON,
                     Node=Node,
@@ -989,8 +1002,10 @@ def runConfigFile(verb, data):
 
 
 def parseArgs():
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         exit_on_error("Not enough arguments given.")
+    if len(sys.argv) == 2:
+        return {'action': sys.argv[1]}
     if not os.path.isfile(sys.argv[2]):
         exit_on_error("Cannot find networkfile: {0}.".format(sys.argv[2]))
     return {'network_cfg': sys.argv[2], 'action': sys.argv[1]}
@@ -1007,8 +1022,11 @@ def main():
     _THE_NETWORK = Network(_BASE_ENVIRON)
 
     args = parseArgs()
-    f = open(args['network_cfg'])
-    result = runConfigFile(args['action'], f)
+    if 'network_cfg' in args:
+        f = open(args['network_cfg'])
+        result = runConfigFile(args['action'], f)
+    else:
+        result = runAction(args['action'])
     if result is False:
         return -1
     return 0
