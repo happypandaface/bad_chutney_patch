@@ -974,12 +974,22 @@ def exit_on_error(err_msg):
 def runAction(verb):
     if verb == "kill-all":
         print("Killing all tests...")
+        totalKilled = 0
         for node_dir in os.listdir("net"):
             for node in os.listdir("net/%s" % node_dir):
                 pid_path = "net/%s/%s/pid" % (node_dir, node)
-                print(pid_path)
                 if os.path.exists(pid_path):
-                    print("killing... %s" % node)
+                    pid = int(open(pid_path).read())
+                    print("killing %s, pid: %d," % (node, pid))
+                    totalKilled += 1
+                    try:
+                        os.kill((pid), signal.SIGINT)
+                    except OSError as e:
+                        if e.errno == errno.ESRCH:
+                            print("process doesn't exist anymore")
+                        totalKilled -= 1
+                    os.remove(pid_path)
+        print("done. Killed %d tor instances" % totalKilled)
     else:
         print("Error: I don't know how to %s." % verb)
 
